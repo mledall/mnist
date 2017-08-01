@@ -30,7 +30,33 @@ def load_test_data():
 	print '--> loaded test data'
 	return test
 
+def tf_session():		# defines the tensorflow classifier
+	train, labels = load_train_data()
+	sess = tf.session()
 
-load_test_data()
+	# placeholders can be used for the inputs and labels since they do not change.
+	x = tf.placeholder(tf.float32, [None, len(train[0])])	# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
+	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9, and the number of inputs will vary, None'
+
+	# Our model: simple one layer
+	W = tf.Variable(tf.zeros([784, 10]))
+	b = tf.Variable(tf.zeros([10]))
+	y = tf.matmul(x,W)+b	# Note the order of x and W for the dimensions to match
+
+	# Initialization
+	init = tf.global_variables_initializer()
+	sess.run(init)
+
+	# Evaluation: cross entropy
+	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
+
+	# Training of the model
+	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.01)
+	train = optimizer.minimize(cross_entropy)
+
+
+
+train, labels = load_train_data()
+print len(train)
 
 

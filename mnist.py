@@ -35,24 +35,16 @@ def tf_session():		# defines the tensorflow classifier
 	sess = tf.session()
 
 	# placeholders can be used for the inputs and labels since they do not change.
-	x = tf.placeholder(tf.float32, [None, len(train[0])])	# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
+	x = tf.placeholder(tf.float32, [None, 784])	# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
 	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9, and the number of inputs will vary, None'
 
-	# Our model: simple one layer
-	W = tf.Variable(tf.zeros([784, 10]))
-	b = tf.Variable(tf.zeros([10]))
-	y = tf.matmul(x,W)+b	# Note the order of x and W for the dimensions to match
+	# Our model consists of defining the weights and biases. Since these are going to be learnt, they need to be movable, hence we use variables.
+	W = tf.variables(tf.zeros([784, 10]))	# weights is matrix with dimensions #pixels x #labels, all initialized to 0, there are 10 neurons
+	b = tf.variables(tf.zeros([10]))		# there is one bias for each neuron
+	y = tf.matmul(x,W)+b					# matmul is provided by tf for matrix multiplication
 
-	# Initialization
-	init = tf.global_variables_initializer()
-	sess.run(init)
-
-	# Evaluation: cross entropy
-	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
-
-	# Training of the model
-	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.01)
-	train = optimizer.minimize(cross_entropy)
+	# Evaluation, cross entropy for now, but can change that. This is for local evaluation, since kaggle uses their own.
+	
 
 
 

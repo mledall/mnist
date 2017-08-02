@@ -14,7 +14,6 @@ def cycle(arr):		# cycles the columns of a matrix
 	arr[:,[-1]] = temp
 	return arr
 
-
 def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
@@ -31,9 +30,6 @@ def load_train_data(eval_r):	# eval_r gives the ratio of the training data is us
 	x_eval, y_eval = X_train[L:], X_label[L:]
 	return x, y, x_eval, y_eval		# x_eval and y_eval are subsets of training data used for evaluation
 
-load_train_data(eval_r = 0.8)
-
-
 def load_test_data():
 	file_path = 'test.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)		# test data only consists of the pixel data. No id labels, will have to create our own.
@@ -45,11 +41,12 @@ def load_test_data():
 
 
 def NN_model():
-	X, Y, X_eval, Y_eval = load_train_data()
+	eval_r = 0.8
+	X, Y, X_eval, Y_eval = load_train_data(eval_r)
 	
 	# placeholders can be used for the inputs and labels since they do not change.
 	x = tf.placeholder(tf.float32, [None, 784])	# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
-	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9, and the number of inputs will vary, None'
+	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9
 
 	# Our model consists of defining the weights and biases. Since these are going to be learnt, they need to be movable, hence we use variables.
 	W = tf.Variable(tf.zeros([784, 10]))	# weights is matrix with dimensions #pixels x #labels, all initialized to 0, there are 10 neurons
@@ -64,8 +61,14 @@ def NN_model():
 	train = optimizer.minimize(cross_entropy)
 
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
-	optimizer, train = NN_model()
 	sess.run(train, feed_dict = {x: X, y_: Y})
+	
+#	batch_size = 100
+#	count = 1
+#	for i in xrange(0, len(X), batch_size):
+#		print 'batch number: %d' % count
+#		sess.run(train, feed_dict = {x: X[i:i+batch_size], y_: Y[i:i+batch_size]})
+#		count = count +1
 
 	# Evaluate the model
 #	correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
@@ -73,6 +76,17 @@ def NN_model():
 #	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
 
 NN_model()
+
+
+#v = [i for i in xrange(100)]
+#batch_size = 4
+#count = 1
+#for i in xrange(0, len(v), batch_size):
+#	print 'batch number %d' %count
+#	print v[i:i+batch_size]
+#	count = count + 1
+#print len(v)/batch_size
+
 
 
 

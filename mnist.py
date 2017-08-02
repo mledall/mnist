@@ -15,18 +15,24 @@ def cycle(arr):		# cycles the columns of a matrix
 	return arr
 
 
-def load_train_data():
+def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
-	X = txt.values.copy()
+	X_train = txt.values.copy()[:,1:]
+	X_label = txt.values.copy()[:,0]
 #	X = cycle(X)			# puts the label as the last column
-	np.random.shuffle(X)	# randomize the input arrays: first element is label, remaining is pixel data
+	np.random.shuffle(X_train)	# randomize the input arrays: first element is label, remaining is pixel data
 #	train_label = X[:,0]
 #	train_pixel = X[:,1:]		# Use a StandardScaler() on the pixel data? Is there any advantage?
 	print '--> loaded training data'
-	x = X[:,1:]
-	y = X[:,0]
-	return x,y
+	L = int(eval_r*len(X_train))
+	L_eval = int((1-eval_r) * len(X_train))
+	x, y = X_train[:L], X_label[:L]
+	x_eval, y_eval = X_train[L:], X_label[L:]
+	return x, y, x_eval, y_eval		# x_eval and y_eval are subsets of training data used for evaluation
+
+load_train_data(eval_r = 0.8)
+
 
 def load_test_data():
 	file_path = 'test.csv'
@@ -39,7 +45,7 @@ def load_test_data():
 
 
 def NN_model():
-	train_data = load_train_data()
+	X, Y, X_eval, Y_eval = load_train_data()
 	
 	# placeholders can be used for the inputs and labels since they do not change.
 	x = tf.placeholder(tf.float32, [None, 784])	# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
@@ -59,13 +65,12 @@ def NN_model():
 
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 	optimizer, train = NN_model()
-	sess.run(train, feed_dict = {x: train_data[0], y_: train_data[1]})
+	sess.run(train, feed_dict = {x: X, y_: Y})
 
 	# Evaluate the model
-#	correct_prediction = tf.equal(tf.argmax(y,1 ), tf.argmax(y_,1 ))
+#	correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
 #	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-#	print(sess.run(accuracy, feed_dict = {x: mnist.test.images, y_: mnist.test.labels}))	
-
+#	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
 
 NN_model()
 

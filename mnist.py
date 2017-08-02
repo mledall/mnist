@@ -8,18 +8,25 @@ import tensorflow as tf
 # we are going to use pandas, http://pandas.pydata.org/pandas-docs/stable/
 import pandas as pd
 
+def cycle(arr):		# cycles the columns of a matrix
+	temp = arr[:,[0]]
+	arr[:,:-1] = arr[:,1:]
+	arr[:,[-1]] = temp
+	return arr
+
 
 def load_train_data():
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
 	X = txt.values.copy()
-	np.random.shuffle(X)	# randomize the input arrays
-	labels = X[:,0]
-	train = X[:,1:]		# Use a StandardScaler() on the pixel data? Is there any advantage?
-	print 'training data input size: ', np.shape(train)
-	print 'labels input size: ', np.shape(labels)
+#	X = cycle(X)			# puts the label as the last column
+	np.random.shuffle(X)	# randomize the input arrays: first element is label, remaining is pixel data
+#	train_label = X[:,0]
+#	train_pixel = X[:,1:]		# Use a StandardScaler() on the pixel data? Is there any advantage?
 	print '--> loaded training data'
-	return train, labels
+	x = X[:,1:]
+	y = X[:,0]
+	return x,y
 
 def load_test_data():
 	file_path = 'test.csv'
@@ -30,10 +37,10 @@ def load_test_data():
 	print '--> loaded test data'
 	return test
 
-def NN_session():		# defines the tensorflow classifier
-	train, labels = load_train_data()
-	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 
+def NN_model():
+	train_data = load_train_data()
+	
 	# placeholders can be used for the inputs and labels since they do not change.
 	x = tf.placeholder(tf.float32, [None, 784])	# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
 	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9, and the number of inputs will vary, None'
@@ -50,8 +57,17 @@ def NN_session():		# defines the tensorflow classifier
 	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.01)
 	train = optimizer.minimize(cross_entropy)
 
+	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
+	optimizer, train = NN_model()
+	sess.run(train, feed_dict = {x: train_data[0], y_: train_data[1]})
 
-NN_session()
+	# Evaluate the model
+#	correct_prediction = tf.equal(tf.argmax(y,1 ), tf.argmax(y_,1 ))
+#	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+#	print(sess.run(accuracy, feed_dict = {x: mnist.test.images, y_: mnist.test.labels}))	
+
+
+NN_model()
 
 
 

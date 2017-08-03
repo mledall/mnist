@@ -29,10 +29,11 @@ def one_hot_array(arr):	# creates an array of one hot vectors out of an array of
 def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
-	X_train = txt.values.copy()[:,1:]
-	X_label = txt.values.copy()[:,0]
+	X = txt.values.copy()
+	np.random.shuffle(X)	# randomize the input arrays: first element is label, remaining is pixel data
+	X_train = X[:,1:]
+	X_label = X[:,0]
 #	X = cycle(X)			# puts the label as the last column
-	np.random.shuffle(X_train)	# randomize the input arrays: first element is label, remaining is pixel data
 	print '--> loaded training data'
 	L = int(eval_r*len(X_train))
 	L_eval = int((1-eval_r) * len(X_train))

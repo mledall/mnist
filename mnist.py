@@ -14,6 +14,18 @@ def cycle(arr):		# cycles the columns of a matrix
 	arr[:,[-1]] = temp
 	return arr
 
+def one_hot(value):	# creates a one hot vector out of a number between 0-9
+	arr = np.zeros(10)
+	arr[value] = 1
+	return arr
+
+def one_hot_array(arr):	# creates an array of one hot vectors out of an array of numnbers
+	new_array = np.zeros((len(arr),10))
+	for i in range(len(arr)):
+		new_array[i,:] = one_hot(arr[i])	
+	return new_array
+
+
 def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
@@ -21,14 +33,17 @@ def load_train_data(eval_r):	# eval_r gives the ratio of the training data is us
 	X_label = txt.values.copy()[:,0]
 #	X = cycle(X)			# puts the label as the last column
 	np.random.shuffle(X_train)	# randomize the input arrays: first element is label, remaining is pixel data
-#	train_label = X[:,0]
-#	train_pixel = X[:,1:]		# Use a StandardScaler() on the pixel data? Is there any advantage?
 	print '--> loaded training data'
 	L = int(eval_r*len(X_train))
 	L_eval = int((1-eval_r) * len(X_train))
 	x, y = X_train[:L], X_label[:L]
 	x_eval, y_eval = X_train[L:], X_label[L:]
+	y = one_hot_array(y)	# Turns labels into an array of one_hot vectors.
+	y_eval = one_hot_array(y_eval)
 	return x, y, x_eval, y_eval		# x_eval and y_eval are subsets of training data used for evaluation
+
+
+print load_train_data(0.1)[1]
 
 def load_test_data():
 	file_path = 'test.csv'
@@ -75,7 +90,7 @@ def NN_model():
 #	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 #	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
 
-NN_model()
+#NN_model()
 
 
 #v = [i for i in xrange(100)]

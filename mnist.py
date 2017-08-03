@@ -43,8 +43,6 @@ def load_train_data(eval_r):	# eval_r gives the ratio of the training data is us
 	return x, y, x_eval, y_eval		# x_eval and y_eval are subsets of training data used for evaluation
 
 
-print load_train_data(0.1)[1]
-
 def load_test_data():
 	file_path = 'test.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)		# test data only consists of the pixel data. No id labels, will have to create our own.
@@ -56,6 +54,7 @@ def load_test_data():
 
 
 def NN_model():
+	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 	eval_r = 0.8
 	X, Y, X_eval, Y_eval = load_train_data(eval_r)
 	
@@ -68,6 +67,10 @@ def NN_model():
 	b = tf.Variable(tf.zeros([10]))		# there is one bias for each neuron
 	y = tf.matmul(x,W)+b					# matmul is provided by tf for matrix multiplication. This is just one layer.
 
+	# Initialization
+	init = tf.global_variables_initializer()
+	sess.run(init)
+
 	# Evaluation, cross entropy for now, but can change that. This is for local evaluation, since kaggle uses their own.
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
 
@@ -75,7 +78,6 @@ def NN_model():
 	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.01)
 	train = optimizer.minimize(cross_entropy)
 
-	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 	sess.run(train, feed_dict = {x: X, y_: Y})
 	
 #	batch_size = 100
@@ -90,7 +92,7 @@ def NN_model():
 #	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 #	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
 
-#NN_model()
+NN_model()
 
 
 #v = [i for i in xrange(100)]

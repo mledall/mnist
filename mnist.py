@@ -75,7 +75,7 @@ def NN_model():
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
 
 	# Training of the model
-	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.01)
+	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.05)
 	train = optimizer.minimize(cross_entropy)
 
 	sess.run(train, feed_dict = {x: X, y_: Y})
@@ -88,21 +88,13 @@ def NN_model():
 #		count = count +1
 
 	# Evaluate the model
-#	correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-#	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-#	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
+	correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
 
 NN_model()
 
 
-#v = [i for i in xrange(100)]
-#batch_size = 4
-#count = 1
-#for i in xrange(0, len(v), batch_size):
-#	print 'batch number %d' %count
-#	print v[i:i+batch_size]
-#	count = count + 1
-#print len(v)/batch_size
 
 
 

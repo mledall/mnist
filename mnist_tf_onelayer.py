@@ -75,7 +75,7 @@ def NN_model(eval_r, learning_r):
 	train = optimizer.minimize(cross_entropy)
 
 	print 'Training the network'
-	sess.run(train, feed_dict = {x: X, y_: Y})
+	sess.run(train, feed_dict = {x: X, y_: Y})	# can also write train.run(feed_dict = {x:, y_:})
 	
 #	batch_size = 100
 #	count = 1
@@ -87,7 +87,7 @@ def NN_model(eval_r, learning_r):
 	# Evaluation of the model, this is for local evaluation since Kaggle uses their own measure.
 	correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-	accuracy_evaluate = sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval})
+	accuracy_evaluate = sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval})	# can also write accuracy.eval(feed_dict = {x:, y_:})
 	print 'accuracy of the model: %f' %accuracy_evaluate
 
 	# Feeds the network with one test image

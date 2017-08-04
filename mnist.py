@@ -50,6 +50,9 @@ def load_test_data():
 	X = txt.values.copy()
 	return X
 
+#print np.reshape(load_test_data()[0],(28,28))
+
+
 def NN_model(eval_r):
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 	X, Y, X_eval, Y_eval = load_train_data(eval_r)
@@ -90,11 +93,22 @@ def NN_model(eval_r):
 
 	# Now we test new images
 	test_data = load_test_data()
-	feed_dict = {x: test_data}
+	feed_dict = {x: np.reshape(test_data[0],(1,784))}
 	classification = sess.run(y, feed_dict)
-	print classification
+	return classification
 
-NN_model(0.8)
+# The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
+
+def one_hot_transf(arr):	# returns the digit associated to a vector of scores (the highest entry corresponds to the correct digit)
+	index = np.where(arr == arr.max())[0][0]
+	return index
+
+v = NN_model(0.8)
+
+print v, one_hot_transf(v[0]), one_hot_inv(v[0])
+
+
+
 
 #eval_r = [0.5,0.6,.7,.8,.9,.99,.999]
 #accuracies = np.zeros(len(eval_r))

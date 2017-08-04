@@ -30,7 +30,7 @@ def load_train_data(eval_r):	# eval_r gives the ratio of the training data is us
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
 	X = txt.values.copy()
-	np.random.shuffle(X)	# randomize the input arrays: first element is label, remaining is pixel data
+#	np.random.shuffle(X)	# randomize the input arrays: first element is label, remaining is pixel data
 	X_train = X[:,1:]
 	X_label = X[:,0]
 #	X = cycle(X)			# puts the label as the last column
@@ -48,15 +48,10 @@ def load_test_data():
 	file_path = 'test.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)		# test data only consists of the pixel data. No id labels, will have to create our own.
 	X = txt.values.copy()
-	test = X		# Use a StandardScaler() on the pixel data? Is there any advantage?
-	print 'test data input size: ', np.shape(test)
-	print '--> loaded test data'
-	return test
+	return X
 
-
-def NN_model():
+def NN_model(eval_r):
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
-	eval_r = 0.8
 	X, Y, X_eval, Y_eval = load_train_data(eval_r)
 	
 	# placeholders can be used for the inputs and labels since they do not change.
@@ -76,7 +71,7 @@ def NN_model():
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
 
 	# Training of the model
-	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.05)
+	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.1)
 	train = optimizer.minimize(cross_entropy)
 
 	sess.run(train, feed_dict = {x: X, y_: Y})
@@ -91,10 +86,23 @@ def NN_model():
 	# Evaluate the model
 	correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-	print(sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval}))
+	accuracy_evaluate = sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval})
 
-NN_model()
+	# Now we test new images
+	test_data = load_test_data()
+	feed_dict = {x: test_data}
+	classification = sess.run(y, feed_dict)
+	print classification
 
+NN_model(0.8)
+
+#eval_r = [0.5,0.6,.7,.8,.9,.99,.999]
+#accuracies = np.zeros(len(eval_r))
+#for i in xrange(len(eval_r)):
+#	accuracies[i] = NN_model(eval_r[i])
+#print accuracies
+
+#print NN_model(.99)
 
 
 

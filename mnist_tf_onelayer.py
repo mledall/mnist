@@ -129,6 +129,7 @@ def submission_file(name = 'mnist_submission_file.csv'):
 
 submission_file()
 
+print 'This code achieve 0.67457 of accuracy on Kaggle, and ranked 1755th.'
 print 'python version: %s' %str(sys.version[:5])
 print 'tensforflow version: %s' %str(tf.__version__)
 

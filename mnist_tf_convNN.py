@@ -27,6 +27,13 @@ def one_hot_array(arr):	# creates an array of one hot vectors out of an array of
 		new_array[i,:] = one_hot(arr[i])	
 	return new_array
 
+def weight_variable(shape):
+	initial = tf.truncated_normal(shape, stddev = 0.1)
+	return tf.Variable(initial)
+
+def bias_variable(shape):
+	initial = tf.constant(0.1, shape = shape)
+	return tf.Variable(initial)
 
 def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
@@ -101,32 +108,25 @@ def NN_model(eval_r):
 
 	y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
+	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y_conv))
+
+	# Training of the model
+	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.05)
+	train_step = optimizer.minimize(cross_entropy)
+
+	# Evaluation of the model, this is for local evaluation since Kaggle uses their own measure.
+	correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
+	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 	# Initialization of model
 	init = tf.global_variables_initializer()
 	sess.run(init)
 
-	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
-
-	# Training of the model
-	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.05)
-	train = optimizer.minimize(cross_entropy)
-
 	print 'Training the network'
-	sess.run(train, feed_dict = {x: X, y_: Y})
-	
-#	batch_size = 100
-#	count = 1
-#	for i in xrange(0, len(X), batch_size):
-#		print 'batch number: %d' % count
-#		sess.run(train, feed_dict = {x: X[i:i+batch_size], y_: Y[i:i+batch_size]})
-#		count = count +1
+	train_step.run(feed_dict={x: X, y_: Y, keep_prob: 0.5})
+	train_accuracy = accuracy.eval(feed_dict={x: X_eval, y_: Y_eval, keep_prob: 1.0})
+	print 'accuracy of the model: %f' %train_accuracy
 
-	# Evaluation of the model, this is for local evaluation since Kaggle uses their own measure.
-	correct_prediction = tf.equal(tf.argmax(y_conv, 1), tf.argmax(y_, 1))
-	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-	accuracy_evaluate = sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval})
-	print 'accuracy of the model: %f' %accuracy_evaluate
 
 	# Feeds the network with one test image
 #	test_data = load_test_data()
@@ -134,12 +134,14 @@ def NN_model(eval_r):
 #	classification = sess.run(y, feed_dict)
 	
 	# Feeds the network with test images to classify
-	print 'loading test data'
-	test_data = load_test_data()
-	feed_dict = {x: test_data}
-	print 'classifying test images'
-	classification = sess.run(y, feed_dict)
-	return classification
+#	print 'loading test data'
+#	test_data = load_test_data()
+#	feed_dict = {x: test_data}
+#	print 'classifying test images'
+#	classification = sess.run(y, feed_dict)
+#	return classification
+
+NN_model(0.8)
 
 # The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
 
@@ -165,10 +167,10 @@ def submission_file(name = 'mnist_submission_file.csv'):
 			f.write('\n')
 	print("Wrote submission to file {}.".format(name))
 
-submission_file()
+#submission_file()
 
-print 'python version: %s' %str(sys.version[:5])
-print 'tensforflow version: %s' %str(tf.__version__)
+#print 'python version: %s' %str(sys.version[:5])
+#print 'tensforflow version: %s' %str(tf.__version__)
 
 
 

@@ -50,7 +50,7 @@ def load_test_data():
 	return X
 
 
-def NN_model(eval_r):
+def NN_model(eval_r, learning_r):
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 	print '--> loaded training data'
 	X, Y, X_eval, Y_eval = load_train_data(eval_r)
@@ -71,7 +71,7 @@ def NN_model(eval_r):
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
 
 	# Training of the model
-	optimizer = tf.train.GradientDescentOptimizer(learning_rate = 0.05)
+	optimizer = tf.train.GradientDescentOptimizer(learning_rate = learning_r)
 	train = optimizer.minimize(cross_entropy)
 
 	print 'Training the network'
@@ -110,8 +110,8 @@ def one_hot_transf(arr):	# returns the digit associated to a vector of scores (t
 	return index	# This is an integer
 
 
-def submission_file(name = 'mnist_submission_file.csv'):
-	classification = NN_model(0.99)
+def submission_file(eval_r, learning_r, name = 'mnist_submission_file.csv'):
+	classification = NN_model(eval_r, learning_r)
 	class_array = np.zeros(len(classification))
 	id_array = [0 for _ in range(len(classification))]
 	with open(name, 'w') as f:
@@ -127,13 +127,17 @@ def submission_file(name = 'mnist_submission_file.csv'):
 			f.write('\n')
 	print("Wrote submission to file {}.".format(name))
 
-submission_file()
+def main_function():
+	eval_r, learning_r = 0.99, 0.05
+	print 'MNIST neural net: one layer'
+	print 'Size of evaluation set = %f of full training set' %eval_r
+	print 'Learning rate = %f' % learning_r
+	submission_file(eval_r, learning_r)
+	print 'This code achieve 0.67457 of accuracy on Kaggle, and ranked 1755th.'
+	print 'Python version: %s' %str(sys.version[:5])
+	print 'Tensforflow version: %s' %str(tf.__version__)
 
-print 'This code achieve 0.67457 of accuracy on Kaggle, and ranked 1755th.'
-print 'python version: %s' %str(sys.version[:5])
-print 'tensforflow version: %s' %str(tf.__version__)
-
-
+main_function()
 
 
 

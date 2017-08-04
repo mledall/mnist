@@ -91,10 +91,16 @@ def NN_model(eval_r):
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	accuracy_evaluate = sess.run(accuracy, feed_dict = {x: X_eval, y_: Y_eval})
 
-	# Now we test new images
+	# Feeds the network with one test image
+#	test_data = load_test_data()
+#	feed_dict = {x: np.reshape(test_data[0],(1,784))}
+#	classification = sess.run(y, feed_dict)
+	
+	# Feeds the network with test images to classify
 	test_data = load_test_data()
-	feed_dict = {x: np.reshape(test_data[0],(1,784))}
+	feed_dict = {x: test_data}
 	classification = sess.run(y, feed_dict)
+
 	return classification
 
 # The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
@@ -103,9 +109,18 @@ def one_hot_transf(arr):	# returns the digit associated to a vector of scores (t
 	index = np.where(arr == arr.max())[0][0]
 	return index
 
-v = NN_model(0.8)
+def submission_file():
+	classification = NN_model(0.99)
+	class_array = np.zeros(len(classification))
+	id_array = [0 for _ in range(len(classification))]
+	for i in xrange(len(classification)):
+		class_array[i] = one_hot_transf(classification[i])
+		id_array[i] = i
+	return class_array, id_array
 
-print v, one_hot_transf(v[0]), one_hot_inv(v[0])
+print submission_file()[0][-10:],submission_file()[1][-10:]
+
+
 
 
 

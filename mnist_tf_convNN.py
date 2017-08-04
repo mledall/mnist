@@ -3,6 +3,8 @@
 # The input and output data looks the same, only the model will have to be changed.
 import sys
 import numpy as np
+import time as time
+
 
 # We are going to use deep neural network with tensorflow.
 import tensorflow as tf
@@ -63,7 +65,7 @@ def NN_model(eval_r):
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
 	print '--> loaded training data'
 	X, Y, X_eval, Y_eval = load_train_data(eval_r)
-	
+	X, Y, X_eval, Y_eval = X[:1000], Y[:1000], X_eval[:1000], Y_eval[:1000]	# Defines a subset of the training set for a quick evalutation of the network
 	# placeholders can be used for the inputs and labels since they do not change.
 	x = tf.placeholder(tf.float32, [None, 784])				# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
 	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9
@@ -122,10 +124,13 @@ def NN_model(eval_r):
 	init = tf.global_variables_initializer()
 	sess.run(init)
 
+	initial = time.time()
+
 	print 'Training the network'
 	train_step.run(feed_dict={x: X, y_: Y, keep_prob: 0.5})
 	train_accuracy = accuracy.eval(feed_dict={x: X_eval, y_: Y_eval, keep_prob: 1.0})
 	print 'accuracy of the model: %f' %train_accuracy
+	print 'time to train: %fs' %(time.time()-initial)
 
 
 	# Feeds the network with one test image

@@ -107,20 +107,29 @@ def NN_model(eval_r):
 
 def one_hot_transf(arr):	# returns the digit associated to a vector of scores (the highest entry corresponds to the correct digit)
 	index = np.where(arr == arr.max())[0][0]
-	return index
+	return index	# This is an integer
 
-def submission_file():
+
+def submission_file(name = 'mnist_submission_file.csv'):
 	classification = NN_model(0.99)
 	class_array = np.zeros(len(classification))
 	id_array = [0 for _ in range(len(classification))]
-	for i in xrange(len(classification)):
-		class_array[i] = one_hot_transf(classification[i])
-		id_array[i] = i
-	return class_array, id_array
+	with open(name, 'w') as f:
+		f.write('ImageId,')
+		f.write('Label')
+		f.write('\n')
+		print 'writing results in file...'
+		for i in xrange(len(classification)):
+			class_array[i] = one_hot_transf(classification[i])
+			id_array[i] = i
+			f.write('%d,' %id_array[i])
+			f.write('%d' %class_array[i])
+			f.write('\n')
+	print("Wrote submission to file {}.".format(name))
 
-print submission_file()[0][-10:],submission_file()[1][-10:]
+submission_file()
 
-
+		
 
 
 

@@ -25,6 +25,9 @@ def one_hot_array(arr):	# creates an array of one hot vectors out of an array of
 		new_array[i,:] = one_hot(arr[i])	
 	return new_array
 
+def one_hot_transf(arr):	# returns the digit associated to a vector of scores (the highest entry corresponds to the correct digit)
+	index = np.where(arr == arr.max())[0][0]
+	return index	# This is an integer
 
 def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
@@ -64,15 +67,15 @@ def NN_model(eval_r, learning_r):
 	b = tf.Variable(tf.zeros([10]))			# there is one bias for each neuron
 	y = tf.matmul(x,W)+b					# matmul is provided by tf for matrix multiplication. This is just one layer.
 
-	# Initialization of model
-	init = tf.global_variables_initializer()
-	sess.run(init)
-
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y))
 
 	# Training of the model
 	optimizer = tf.train.GradientDescentOptimizer(learning_rate = learning_r)
 	train = optimizer.minimize(cross_entropy)
+
+	# Initialization of model
+	init = tf.global_variables_initializer()
+	sess.run(init)
 
 	print 'Training the network'
 	sess.run(train, feed_dict = {x: X, y_: Y})	# can also write train.run(feed_dict = {x:, y_:})
@@ -103,11 +106,13 @@ def NN_model(eval_r, learning_r):
 	classification = sess.run(y, feed_dict)
 	return classification
 
-# The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
+N = 5
+classes = NN_model(0.9,0.05)[:N]
+for i in range(len(classes)):
+	print one_hot_transf(classes[i])
 
-def one_hot_transf(arr):	# returns the digit associated to a vector of scores (the highest entry corresponds to the correct digit)
-	index = np.where(arr == arr.max())[0][0]
-	return index	# This is an integer
+
+# The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
 
 
 def submission_file(eval_r, learning_r, name = 'mnist_submission_file.csv'):
@@ -137,7 +142,7 @@ def main_function():
 	print 'Python version: %s' %str(sys.version[:5])
 	print 'Tensforflow version: %s' %str(tf.__version__)
 
-main_function()
+#main_function()
 
 
 

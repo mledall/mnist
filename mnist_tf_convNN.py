@@ -196,11 +196,6 @@ def submission_file(name = 'mnist_convNN_submission_file.csv'):
 	print("Wrote submission to file {}.".format(name))
 
 
-def display_digit():
-	x = load_test_data()
-	with open ('test_write.txt', 'w') as f:
-		f.write('%s' % str(np.reshape(x[0],(28,28))))
-
 #submission_file()
 
 #print 'python version: %s' %str(sys.version[:5])

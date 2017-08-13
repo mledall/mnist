@@ -32,6 +32,15 @@ def one_hot_transf(arr):	# returns the digit associated to a vector of scores (t
 	index = np.where(arr == arr.max())[0][0]
 	return index	# This is an integer
 
+def make_batches(arr, batch_size):	# takes an array, and makes a batch out of it
+	N_batches = len(arr)/batch_size
+	arr_batches = np.split(arr[:N_batches*batch_size], N_batches)
+	arr_last_batch = arr[N_batches*batch_size:]
+	if len(arr) % batch_size == 0:
+		return arr_batches
+	else:
+		return arr_batches, arr_last_batch
+
 def weight_variable(shape):
 	initial = tf.truncated_normal(shape, stddev = 0.1)
 	return tf.Variable(initial)
@@ -66,9 +75,7 @@ def load_test_data():
 
 def NN_model(eval_r):
 	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
-	print '--> loaded training data'
-	X, Y, X_eval, Y_eval = load_train_data(eval_r)
-#	X, Y, X_eval, Y_eval = X[:10000], Y[:10000], X_eval[:1000], Y_eval[:1000]	# Defines a subset of the training set for a quick evalutation of the network
+
 	# placeholders can be used for the inputs and labels since they do not change.
 	x = tf.placeholder(tf.float32, [None, 784])				# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
 	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9
@@ -130,24 +137,32 @@ def NN_model(eval_r):
 	initial = time.time()
 
 	print 'Training the network'
-	L = len(X)
-	batch_size = 100
-	N_full_batches = L/batch_size
-	print 'Number of batches: %d' % N_full_batches
-	X_batches = np.split(X[:N_full_batches*batch_size], N_full_batches)
-	Y_batches = np.split(Y[:N_full_batches*batch_size], N_full_batches)
-	for i in xrange(N_full_batches):
-		train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 1.0})
-		train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 0.5})
-		print 'Trained batch: %d with accuracy %f'%(i,train_accuracy)
+	X, Y, X_eval, Y_eval = load_train_data(eval_r)
+	print '  - Loaded training data, number of inputs: %d' % len(X)
+	batch_size = 113
+	if len(X) % batch_size == 0:
+		X_batches = make_batches(X, batch_size)
+		Y_batches = make_batches(Y, batch_size)
+		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X)/batch_size)
+		print '    (All full batches)'
+		for i in xrange(len(X) / batch_size):
+			train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 1.0})
+			train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 0.5})
+			print 'Trained batch: %d with accuracy %f'%(i,train_accuracy)
+	else:
+		X_batches, X_last_batch = make_batches(X, batch_size)
+		Y_batches, Y_last_batch = make_batches(Y, batch_size)
+		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X)/batch_size+1)
+		print '    (One un-filled batch)'
+		for i in xrange(len(X) / batch_size):
+			train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 1.0})
+			train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 0.5})
+			print 'Trained batch: %d with accuracy %f'%(i,train_accuracy)
+		train_accuracy = accuracy.eval(feed_dict={x: X_last_batch, y_: Y_last_batch, keep_prob: 1.0})
+		train_step.run(feed_dict={x: X_last_batch, y_: Y_last_batch, keep_prob: 0.5})
+		print 'Trained batch: %d with accuracy %f'%(len(X) / batch_size+1,train_accuracy)
 	print 'Accuracy of the model: %f' %train_accuracy
 	print 'time to train: %fs' %(time.time()-initial)
-
-
-
-NN_model(1)
-
-
 
 	# Feeds the network with one test image
 #	test_data = load_test_data()
@@ -155,31 +170,24 @@ NN_model(1)
 #	classification = sess.run(y_conv, feed_dict)
 	
 	# Feeds the network with test images to classify
-#	print 'loading test data'
+#	print 'Loading test data'
 #	test_data = load_test_data()
 #	feed_dict = {x: test_data, keep_prob: 1}
+#	start = time.time()
 #	print 'classifying test images'
 #	classification = sess.run(y_conv, feed_dict)
-#	print test_data[0]#classification, , np.reshape(test_data[0],(1,784))
+#	print 'Finished classification in %f s' %time.time()-start
+
 #	return classification
 
-#NN_model(0.5)
-
-#a = np.array([np.array([i, 2*i]) for i in range(10)])
-#L = len(a)
-#batch_size = 3
-#N_full_batches = L/batch_size
-#full_batches = np.split(a[:N_full_batches*batch_size], N_full_batches)
-#unfull_batch = a[N_full_batches*batch_size:]
-
-#print full_batches, unfull_batch
+NN_model(1)
 
 
 # The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
 
 
 def submission_file(name = 'mnist_convNN_submission_file.csv'):
-	classification = NN_model(0.99)
+	classification = NN_model(1)
 	class_array = np.zeros(len(classification))
 	id_array = [0 for _ in range(len(classification))]
 	with open(name, 'w') as f:
@@ -200,6 +208,19 @@ def submission_file(name = 'mnist_convNN_submission_file.csv'):
 
 #print 'python version: %s' %str(sys.version[:5])
 #print 'tensforflow version: %s' %str(tf.__version__)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

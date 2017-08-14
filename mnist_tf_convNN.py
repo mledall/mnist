@@ -192,9 +192,6 @@ def NN_model(eval_r):
 	print 'Finished classification in %f ' %(time.time()-start)
 	return np.concatenate(classification)
 
-NN_model(1)
-
-
 
 # The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.
 
@@ -217,7 +214,7 @@ def submission_file(name = 'mnist_convNN_submission_file.csv'):
 	print("Wrote submission to file {}.".format(name))
 
 
-#submission_file()
+submission_file()
 
 #print 'python version: %s' %str(sys.version[:5])
 #print 'tensforflow version: %s' %str(tf.__version__)

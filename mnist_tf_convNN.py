@@ -138,49 +138,62 @@ def NN_model(eval_r):
 
 	print 'Training the network'
 	X, Y, X_eval, Y_eval = load_train_data(eval_r)
-	print '  - Loaded training data, number of inputs: %d' % len(X)
-	batch_size = 113
+	batch_size = 100
 	if len(X) % batch_size == 0:
 		X_batches = make_batches(X, batch_size)
 		Y_batches = make_batches(Y, batch_size)
-		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X)/batch_size)
+		print '  - Loaded training data, number of inputs: %d' % len(X)
+		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X_batches))
 		print '    (All full batches)'
-		for i in xrange(len(X) / batch_size):
+		for i in xrange(len(X_batches)):
 			train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 1.0})
 			train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 0.5})
-			print 'Trained batch: %d with accuracy %f'%(i,train_accuracy)
+			print '  - Trained batch: %d with accuracy %f'%(i+1,train_accuracy)
 	else:
 		X_batches, X_last_batch = make_batches(X, batch_size)
 		Y_batches, Y_last_batch = make_batches(Y, batch_size)
-		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X)/batch_size+1)
+		print '  - Loaded training data, number of inputs: %d' % len(X)
+		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X_batches)+len(X_last_batch))
 		print '    (One un-filled batch)'
-		for i in xrange(len(X) / batch_size):
+		for i in xrange(len(X_batches)):
 			train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 1.0})
 			train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 0.5})
-			print 'Trained batch: %d with accuracy %f'%(i,train_accuracy)
+			print '  - Trained batch: %d with accuracy %f'%(i+1,train_accuracy)
 		train_accuracy = accuracy.eval(feed_dict={x: X_last_batch, y_: Y_last_batch, keep_prob: 1.0})
 		train_step.run(feed_dict={x: X_last_batch, y_: Y_last_batch, keep_prob: 0.5})
-		print 'Trained batch: %d with accuracy %f'%(len(X) / batch_size+1,train_accuracy)
+		print '  - Trained batch: %d with accuracy %f'%(len(X_batches)+1,train_accuracy)
 	print 'Accuracy of the model: %f' %train_accuracy
 	print 'time to train: %fs' %(time.time()-initial)
 
-	# Feeds the network with one test image
+	# Feeds the network with select test image
 #	test_data = load_test_data()
-#	feed_dict = {x: np.reshape(test_data[0],(1,784)), keep_prob: 1.}
-#	classification = sess.run(y_conv, feed_dict)
-	
-	# Feeds the network with test images to classify
-#	print 'Loading test data'
-#	test_data = load_test_data()
-#	feed_dict = {x: test_data, keep_prob: 1}
-#	start = time.time()
-#	print 'classifying test images'
-#	classification = sess.run(y_conv, feed_dict)
-#	print 'Finished classification in %f s' %time.time()-start
+#	classification = np.zeros((2,10))
+#	classes = np.zeros(2)
+#	for i in range(2):
+#		feed_dict = {x: [test_data[i]], keep_prob: 1.}
+#		classification[i] = sess.run(y_conv, feed_dict)
+#	print classification
 
-#	return classification
+	# Feeds the network with test images to classify in batches
+	test_data = load_test_data()
+	print 'Classifying new images'
+	# Still needs to split test data into bunches.
+	batch_size = 500
+	test_data_batch = make_batches(test_data, batch_size)
+	print '  - Loaded test data, number of inputs: %d' %len(test_data)
+	start = time.time()
+	classification = np.zeros((len(test_data), 10))
+	classification = make_batches(classification, batch_size)
+	print '  - Split test data in %d batches of size %d images' %(len(test_data_batch), batch_size)
+	for i in range(len(test_data_batch)):
+		feed_dict = {x: test_data_batch[i], keep_prob: 1.}
+		classification[i] = sess.run(y_conv, feed_dict)
+		print '  - Classified test images in batch number %d' %(i+1)
+	print 'Finished classification in %f ' %(time.time()-start)
+	return np.concatenate(classification)
 
 NN_model(1)
+
 
 
 # The output vector is a 10D vector, whose entries are the "scores" that each neurons corresponding to the one_hot vector obtained. Thus some will be positive, some will be negative, and will also not be between 0-9. For instance, one result might look like [9886.63183594, -10975.38085938, 12687.75488281,-410.18963623,-3160.11547852,-7059.89794922,4049.5065918,-5421.63183594,3557.73974609,-3154.41796875] . We need to convert this back into a one_hot vector, and for that we take the largest positive value as 1, and all others as 0.

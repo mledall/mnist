@@ -106,20 +106,40 @@ def NN_model(eval_r):
 	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9
 	x_image = tf.reshape(x, [-1,28,28,1])					# Unflattens the input arrays
 
+	# Here we are going to experiment with a really crazy network with some randomness, see if there is added value. The network will consist of various convolutional networks in parallel, with, all with different parameters.
+
+
+
+	# 1st network
 	# 1st layer: convolution
-	y_conv1 = conv_layer(x_image, [5,5], 1, 32)			# input_shape: 28x28x1, output_shape: 14x14x32
+	y_conv11 = conv_layer(x_image, [5,5], 1, 32)			# input_shape: 28x28x1, output_shape: 14x14x32
 
 	# 2nd layer: convolution
-	y_conv2 = conv_layer(y_conv1, [5,5], 32, 64)		# input_shape: 14x14x32, output_shape: 7x7x64
+	y_conv12 = conv_layer(y_conv11, [5,5], 32, 64)		# input_shape: 14x14x32, output_shape: 7x7x64
 
 	# 3rd layer: fully connected, with dropout
-	y_dense = dense_layer(y_conv2, [7,7,64], 1024)
+	y_dense1 = dense_layer(y_conv12, [7,7,64], 1024)
 
-	keep_prob = tf.placeholder(tf.float32)
-	y_dense_drop = tf.nn.dropout(y_dense, keep_prob)
+	keep_prob1 = tf.placeholder(tf.float32)
+	y_dense_drop1 = tf.nn.dropout(y_dense1, keep_prob1)
 
+	# 2nd network
+	# 1st layer: convolution
+	y_conv21 = conv_layer(x_image, [5,5], 1, 32)			# input_shape: 28x28x1, output_shape: 14x14x32
+
+	# 2nd layer: convolution
+	y_conv22 = conv_layer(y_conv21, [5,5], 32, 64)		# input_shape: 14x14x32, output_shape: 7x7x64
+
+	# 3rd layer: fully connected, with dropout
+	y_dense2 = dense_layer(y_conv22, [7,7,64], 1024)
+
+	keep_prob2 = tf.placeholder(tf.float32)
+	y_dense_drop2 = tf.nn.dropout(y_dense2, keep_prob2)
+
+	# Layer to combine the two networks: dense layer, whose input are the two outputs concatenated, with tf.concat([a,b], axis)
 	# 4th layer: fully connected, readout layer
-	y_conv = readout_layer(y_dense_drop, 1024, 10)
+	y_concat = tf.concat((y_dense_drop1, y_dense_drop2), 1)
+	y_conv = readout_layer(y_concat, 2048, 10)
 
 	# Loss function
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y_conv))
@@ -148,8 +168,8 @@ def NN_model(eval_r):
 		print '  - Split training data in batches of size %d, number of batches: %d' % (batch_size,len(X_batches))
 		print '    (All full batches)'
 		for i in xrange(len(X_batches)):
-			train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 1.0})
-			train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob: 0.5})
+			train_accuracy = accuracy.eval(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob1: 1.0, keep_prob2: 1.0})
+			train_step.run(feed_dict={x: X_batches[i], y_: Y_batches[i], keep_prob1: 0.5, keep_prob2: 0.5})
 			print '  - Trained batch: %d with accuracy %f'%(i+1,train_accuracy)
 	else:
 		X_batches, X_last_batch = make_batches(X, batch_size)
@@ -188,7 +208,7 @@ def NN_model(eval_r):
 	classification = make_batches(classification, batch_size)
 	print '  - Split test data in %d batches of size %d images' %(len(test_data_batch), batch_size)
 	for i in range(len(test_data_batch)):
-		feed_dict = {x: test_data_batch[i], keep_prob: 1.}
+		feed_dict = {x: test_data_batch[i], keep_prob1: 1., keep_prob2: 1.}
 		classification[i] = sess.run(y_conv, feed_dict)
 		print '  - Classified test images in batch number %d' %(i+1)
 	print 'Finished classification in %f ' %(time.time()-start)

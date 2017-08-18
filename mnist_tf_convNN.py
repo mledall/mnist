@@ -1,6 +1,7 @@
 # This code will solve the MNIST Kaggle competition, https://www.kaggle.com/c/digit-recognizer
 # This code will implement a convolutional neural network to solve the MNIST competition
 # The input and output data looks the same, only the model will have to be changed.
+
 import sys
 import numpy as np
 import time as time
@@ -41,14 +42,6 @@ def make_batches(arr, batch_size):	# takes an array, and makes a batch out of it
 	else:
 		return arr_batches, arr_last_batch
 
-def weight_variable(shape):
-	initial = tf.truncated_normal(shape, stddev = 0.1)
-	return tf.Variable(initial)
-
-def bias_variable(shape):
-	initial = tf.constant(0.1, shape = shape)
-	return tf.Variable(initial)
-
 def load_train_data(eval_r):	# eval_r gives the ratio of the training data is used for training, and 1-eval_r used for evaluation
 	file_path = 'train.csv'
 	txt = pd.read_csv(file_path, sep = ',', header = 0)
@@ -74,52 +67,59 @@ def load_test_data():
 
 
 def NN_model(eval_r):
-	sess = tf.InteractiveSession()	# The command InteractiveSession() allows to evaluate the model directly. If we used tf.Session() instead, we would have to explicitly open a session with the command with tf.Session(): ....  https://www.tensorflow.org/api_docs/python/tf/InteractiveSession
+	sess = tf.InteractiveSession()
 
-	# placeholders can be used for the inputs and labels since they do not change.
 	x = tf.placeholder(tf.float32, [None, 784])				# the number of input will vary, hence 'None', and the number of pixels len(train[0]) = 784 is fixed
 	y_ = tf.placeholder(tf.float32, [None, 10])				# the number of labels is 10, 0-9
+	x_image = tf.reshape(x, [-1,28,28,1])					# Unflattens the input arrays
 
-	def conv2d(x,W):	# convolutional layer indigenous to tensorflow
+	def conv2d(x,W):
 		return tf.nn.conv2d(x, W, strides = [1,1,1,1], padding = 'SAME')
 
 	def max_pool_2x2(x):
 		return tf.nn.max_pool(x, ksize = [1,2,2,1], strides = [1,2,2,1], padding = 'SAME')
 
-	W_conv1 = weight_variable([5,5,1,32])	# initialization of the weights of the first convolution layer
-	b_conv1 = bias_variable([32])	# initialization of the biases
+	def weight_variable(shape):
+		initial = tf.truncated_normal(shape, stddev = 0.1)
+		return tf.Variable(initial)
 
-	x_image = tf.reshape(x, [-1,28,28,1])
+	def bias_variable(shape):
+		initial = tf.constant(0.1, shape = shape)
+		return tf.Variable(initial)
 
+	# The following defines the model: number of layers, neurons, shaping and processing of the images.
 
-# The following defines the model: number of layers, neurons, shaping and processing of the images.
+	# 1st layer: convolution
 
+	W_conv1 = weight_variable([5,5,1,32])					# 5x5 kernel, scanning one input channel, stride 1 --> 28 size of output. Does that 32 times, output shape: 28x28x32 
+	b_conv1 = bias_variable([32])							# one bias per stack, 32 weights
+	h_conv1 = tf.nn.relu(conv2d(x_image,W_conv1)+b_conv1)
+	h_pool1 = max_pool_2x2(h_conv1)							# each of slice of the 32 stacks is boiled down: 2x2 patches, with stride 2: 28/2 = 14, output shape: 14x14x32
 
-	h_conv1 = tf.nn.relu(conv2d(x_image,W_conv1)+b_conv1)	# This is the first convolution layer, with a ReLU output.
-	h_pool1 = max_pool_2x2(h_conv1)
+	# 2nd layer: convolution
 
-	W_conv2 = weight_variable([5, 5, 32, 64])
-	b_conv2 = bias_variable([64])
+	W_conv2 = weight_variable([5, 5, 32, 64])					# 5x5 kernel, scanning the 32 input channels (output from previous layer), stride 1 --> 14. does that 64 times, output shape: 14x14x64
+	b_conv2 = bias_variable([64])								# 64 biases
+	h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+	h_pool2 = max_pool_2x2(h_conv2)								# each of the 64 stacks is pooled: 2x2 patches, stride 2: 14/2 = 7.
 
-	h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)	# here you see the input of this layer is the output h_conv1 of the previous layer
-	h_pool2 = max_pool_2x2(h_conv2)	# and then you pool again.
+	# 3rd layer: fully connected
 
-	# In the following step, we are going to fully connect the layer to train over all of the picture
-
-	W_fc1 = weight_variable([7 * 7 * 64, 1024])		# I do not quite understand all of these functions, and dimensions, why 7*7, why 1024... 
+	W_fc1 = weight_variable([7 * 7 * 64, 1024])					# 7x7x64 the total number of neurons as inputs (outputs from previous layer), outputs 1024 neurons, input shape: 7x7x64x1024
 	b_fc1 = bias_variable([1024])
+	h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64]) 		# reshape the output from previous layer into the right shape to be an input to this layer.
+	h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)	# Output shape 1024
 
-	h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64]) # same here, I do not quite know what all of those numbers mean.
-	h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1) # Here we perform the training on the fully connected layer.
+	keep_prob = tf.placeholder(tf.float32)
+	h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)				# Dropout layer
 
-	keep_prob = tf.placeholder(tf.float32)	# we create a placeholder which will be used to define the probability that a given neuron will be used during training. We use dropout during training, but not during testing.
-	h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)	# This is the part where we apply the dropout, which avoids overfitting.
+	# 4th layer: fully connected, readout layer
 
-	W_fc2 = weight_variable([1024, 10])	# This defines the readout layer
+	W_fc2 = weight_variable([1024, 10])							# inputs 1024 (outputs from previous layer), outputs 10 neurons (for each digit)
 	b_fc2 = bias_variable([10])
-
 	y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
+	# Loss function
 	cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_, logits = y_conv))
 
 	# Training of the model
